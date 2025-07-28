@@ -166,7 +166,6 @@ class CookieTokenObtainPairView(TokenObtainPairView):
         # Return the final response to the client.
         return response
 
-
 class CookieTokenRefreshView(TokenRefreshView):
     """
     Custom view to refresh the access token using a refresh token from a cookie.
