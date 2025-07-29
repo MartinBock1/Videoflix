@@ -9,8 +9,22 @@ from django.utils.encoding import force_bytes
 
 
 class RegistrationAndActivationTests(APITestCase):
+    """
+    Test suite for the user registration and account activation process.
+
+    This class covers the complete workflow from a user signing up to
+    activating their account via an email link. It tests both successful
+
+    scenarios and various failure cases.
+    """
 
     def setUp(self):
+        """
+        Set up the test environment for each test case.
+
+        This method initializes common data used across the tests, including
+        the registration URL and sample valid/invalid data payloads.
+        """
         self.register_url = reverse('register')
         self.valid_payload = {
             'email': 'testuser@example.com',
@@ -24,6 +38,14 @@ class RegistrationAndActivationTests(APITestCase):
         }
 
     def test_successful_registration(self):
+        """
+        Ensure a new user can be registered successfully.
+
+        This test verifies that a POST request with valid data to the
+        registration endpoint results in a 201 Created status. It also
+        checks that a new, inactive user is created in the database and
+        that an activation email has been sent.
+        """
         response = self.client.post(self.register_url, self.valid_payload, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -38,6 +60,13 @@ class RegistrationAndActivationTests(APITestCase):
         self.assertIn(self.valid_payload['email'], mail.outbox[0].to)
 
     def test_registration_with_mismatched_passwords(self):
+        """
+        Ensure registration fails if the provided passwords do not match.
+
+        This test asserts that the request fails with a 400 Bad Request
+        status, returns the correct validation error, and that no new
+        user is created in the database.
+        """
         response = self.client.post(
             self.register_url, self.invalid_payload_passwords_mismatch, format='json')
 
@@ -48,7 +77,9 @@ class RegistrationAndActivationTests(APITestCase):
             email=self.invalid_payload_passwords_mismatch['email']).exists())
 
     def test_registration_with_missing_password(self):
-        """ Testet die Registrierung, wenn das Passwort-Feld fehlt. """
+        """
+        Ensure registration fails if the password and confirmation fields are missing.
+        """
         payload = {
             'email': 'test@example.com',
         }
@@ -58,6 +89,13 @@ class RegistrationAndActivationTests(APITestCase):
         self.assertIn('confirmed_password', response.data)
 
     def test_registration_with_existing_email(self):
+        """
+        Ensure registration fails if the email address is already in use.
+
+        This test first creates a user, then attempts to register a new
+        user with the same email. It asserts that the request fails with
+        a 400 Bad Request status and the appropriate error message.
+        """
         User.objects.create_user(
             username='existing@example.com',
             email='existing@example.com',
@@ -75,6 +113,9 @@ class RegistrationAndActivationTests(APITestCase):
         self.assertEqual(response.data['email'][0], 'Email already exists')
 
     def test_registration_with_missing_email(self):
+        """
+        Ensure registration fails if the email field is not provided.
+        """
         payload = {
             'password': 'password123',
             'confirmed_password': 'password123'
@@ -84,6 +125,14 @@ class RegistrationAndActivationTests(APITestCase):
         self.assertIn('email', response.data)
 
     def test_successful_account_activation(self):
+        """
+        Ensure a user account can be activated using a valid link.
+
+        This test creates an inactive user, generates a valid activation
+        UID and token, and makes a GET request to the activation URL. It
+        asserts that the response is successful (200 OK) and that the
+        user's `is_active` status is updated to True.
+        """
         user = User.objects.create_user(
             username='to-activate@example.com',
             email='to-activate@example.com',
@@ -101,6 +150,13 @@ class RegistrationAndActivationTests(APITestCase):
         self.assertTrue(user.is_active)
 
     def test_invalid_account_activation_link(self):
+        """
+        Ensure account activation fails if the activation link token is invalid.
+
+        This test uses a valid UID but an invalid token. It asserts that
+        the request fails with a 400 Bad Request status, returns the correct
+        error message, and that the user's `is_active` status remains False.
+        """
         user = User.objects.create_user(
             username='inactive@example.com',
             email='inactive@example.com',
