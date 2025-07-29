@@ -47,7 +47,7 @@ class RegistrationView(APIView):
             saved_account = serializer.save()
             current_site = get_current_site(request)
             mail_subject = 'Activate your Videoflix account.'
-            
+
             message = render_to_string('acc_active_email.html', {
                 'user': saved_account,
                 'domain': current_site.domain,
@@ -58,8 +58,8 @@ class RegistrationView(APIView):
             email = EmailMessage(
                 mail_subject, message, to=[to_email]
             )
-            email.send() # E-Mail senden
-            
+            email.send()  # E-Mail senden
+
             # Prepare the data to be sent in the response.
             data = {
                 "user": {
@@ -75,6 +75,7 @@ class RegistrationView(APIView):
             # If the data is invalid, return the errors with a 400 Bad Request status.
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 class ActivationView(APIView):
     permission_classes = [AllowAny]
 
@@ -82,7 +83,7 @@ class ActivationView(APIView):
         try:
             uid = force_bytes(urlsafe_base64_decode(uidb64))
             user = User.objects.get(pk=uid)
-        except(TypeError, ValueError, OverflowError, User.DoesNotExist):
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
             user = None
 
         if user is not None and account_activation_token.check_token(user, token):
@@ -91,6 +92,7 @@ class ActivationView(APIView):
             return Response({"message": "Account successfully activated!"}, status=status.HTTP_200_OK)
         else:
             return Response({"error": "Activation link is invalid!"}, status=status.HTTP_400_BAD_REQUEST)
+
 
 class CookieTokenObtainPairView(TokenObtainPairView):
     """
@@ -137,9 +139,19 @@ class CookieTokenObtainPairView(TokenObtainPairView):
         # from the validated data.
         refresh = serializer.validated_data["refresh"]
         access = serializer.validated_data["access"]
+        
+        user = serializer.user
 
         # Create the initial response object with a success message.
-        response = Response({"message": "login successful"})
+        response = Response(
+            {
+                "detail": "login successful",
+                 "user": {
+                    "id": user.id,
+                    "username": user.username
+                },
+            }
+        )
 
         # Set the access token in a secure, HTTPOnly cookie.
         # httponly=True: Prevents client-side JavaScript from accessing the cookie.
@@ -165,6 +177,7 @@ class CookieTokenObtainPairView(TokenObtainPairView):
 
         # Return the final response to the client.
         return response
+
 
 class CookieTokenRefreshView(TokenRefreshView):
     """

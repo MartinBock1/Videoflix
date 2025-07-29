@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from datetime import timedelta
 from pathlib import Path
 import os
+import sys
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -25,13 +26,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY', default='django-insecure-@#x5h3zj!g+8g1v@2^b6^9$8&f1r7g$@t3v!p4#=g0r5qzj4m3')
+SECRET_KEY = os.getenv(
+    'SECRET_KEY', default='django-insecure-@#x5h3zj!g+8g1v@2^b6^9$8&f1r7g$@t3v!p4#=g0r5qzj4m3')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
 ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", default="localhost").split(",")
-CSRF_TRUSTED_ORIGINS = os.environ.get("CSRF_TRUSTED_ORIGINS", default="http://localhost:4200").split(",")
+CSRF_TRUSTED_ORIGINS = os.environ.get(
+    "CSRF_TRUSTED_ORIGINS", default="http://localhost:4200").split(",")
 
 
 # Application definition
@@ -46,7 +49,7 @@ INSTALLED_APPS = [
     'django.contrib.sites',
     'rest_framework',
     'rest_framework_simplejwt',
-	'corsheaders',
+    'corsheaders',
     'django_rq',
     'user_auth_app.apps.UserAuthAppConfig',
     'videoflix_app.apps.VideoflixAppConfig',
@@ -61,7 +64,7 @@ MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'corsheaders.middleware.CorsMiddleware',
-	'django.middleware.common.CommonMiddleware',
+    'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -197,3 +200,15 @@ else:
     EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
     EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
     DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER)
+
+# Wenn 'test' als Befehl ausgeführt wird, überschreibe die Einstellungen für die Testumgebung
+if 'test' in sys.argv:
+    # Verwende eine schnelle In-Memory-Datenbank für Tests (optional, aber schnell)
+    # Wenn Sie gegen die echte PostgreSQL-Testdatenbank testen wollen, kommentieren Sie dies aus.
+    # DATABASES['default'] = {
+    #     'ENGINE': 'django.db.backends.sqlite3',
+    #     'NAME': ':memory:',
+    # }
+
+    # Verwende das In-Memory-E-Mail-Backend, um keine echten E-Mails zu senden
+    EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
