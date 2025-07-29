@@ -49,6 +49,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
         account.save()
         return account
 
+
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)

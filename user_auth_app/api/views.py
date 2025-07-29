@@ -8,9 +8,11 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework.views import APIView
 
+from .authentication import CookieJWTAuthentication
 from .serializers import RegistrationSerializer, CustomTokenObtainPairSerializer
 from .tokens import account_activation_token
 
@@ -139,14 +141,14 @@ class CookieTokenObtainPairView(TokenObtainPairView):
         # from the validated data.
         refresh = serializer.validated_data["refresh"]
         access = serializer.validated_data["access"]
-        
+
         user = serializer.user
 
         # Create the initial response object with a success message.
         response = Response(
             {
                 "detail": "login successful",
-                 "user": {
+                "user": {
                     "id": user.id,
                     "username": user.username
                 },
@@ -240,3 +242,58 @@ class CookieTokenRefreshView(TokenRefreshView):
         )
 
         return response
+
+
+class LogoutView(APIView):
+    """
+    Handles user logout by blacklisting the refresh token and deleting session cookies.
+
+    This view requires the user to be authenticated via a valid access token.
+    It reads the refresh token from the HTTPOnly cookie, adds it to the blacklist
+    to invalidate it, and then instructs the client to delete both the access and
+    refresh token cookies.
+    """
+    authentication_classes = [CookieJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        """
+        Processes the logout request.
+
+        Args:
+            request (Request): The HTTP request object.
+
+        Returns:
+            Response: An HTTP response object confirming logout and instructing
+                      the client to delete the authentication cookies.
+        """
+        # Holen des Refresh-Tokens aus dem Cookie
+        refresh_token = request.COOKIES.get("refresh_token")
+
+        if refresh_token is None:
+            return Response(
+                {"error": "Refresh token not found."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            # Den Token zur Blacklist hinzufügen
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+
+            # Erfolgsmeldung gemäss API-Doku erstellen
+            response = Response({
+                "detail": "Log-Out successfully! All Tokens will be deleted. Refresh token is now invalid."
+            }, status=status.HTTP_200_OK)
+
+            # Cookies im Browser des Clients löschen
+            response.delete_cookie("access_token")
+            response.delete_cookie("refresh_token")
+
+            return response
+        except Exception as e:
+            # Falls der Token bereits ungültig oder manipuliert ist
+            return Response(
+                {"error": "Invalid refresh token."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
