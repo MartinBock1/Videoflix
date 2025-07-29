@@ -231,7 +231,12 @@ class CookieTokenRefreshView(TokenRefreshView):
         access_token = serializer.validated_data.get("access")
 
         # Create a response with a success message.
-        response = Response({"message": "access token refreshed"})
+        response = Response(
+            {
+                "detail": "Token refreshed",
+                "access": "new_access_token"
+            }
+        )
         # Set the new access token in a secure, HTTPOnly cookie.
         response.set_cookie(
             key="access_token",
