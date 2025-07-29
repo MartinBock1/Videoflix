@@ -40,4 +40,8 @@ EOF
 
 python manage.py rqworker default &
 
-exec gunicorn core.wsgi:application --bind 0.0.0.0:8000
+# Nur für die Entwicklungszeit auskommentieren!
+# exec gunicorn core.wsgi:application --bind 0.0.0.0:8000
+
+# Nicht im Live-Betriebnutzen!
+exec python manage.py runserver 0.0.0.0:8000
