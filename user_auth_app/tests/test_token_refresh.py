@@ -56,7 +56,7 @@ class TokenRefreshTests(APITestCase):
 
         # Assert the response is successful
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['message'], 'access token refreshed')
+        self.assertEqual(response.data['detail'], 'Token refreshed')
 
         # Assert that a new access token cookie has been set in the response
         self.assertIn('access_token', response.cookies)
