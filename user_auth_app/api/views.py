@@ -1,7 +1,9 @@
 from django.contrib.auth.models import User
+from django.contrib.auth.tokens import default_token_generator
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
+from django.urls import reverse
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 
@@ -13,7 +15,12 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework.views import APIView
 
 from .authentication import CookieJWTAuthentication
-from .serializers import RegistrationSerializer, CustomTokenObtainPairSerializer
+from .serializers import (
+    RegistrationSerializer,
+    CustomTokenObtainPairSerializer,
+    PasswordResetRequestSerializer,
+    PasswordResetConfirmSerializer,
+)
 from .tokens import account_activation_token
 
 
@@ -247,6 +254,100 @@ class CookieTokenRefreshView(TokenRefreshView):
         )
 
         return response
+
+
+class PasswordResetRequestView(APIView):
+    """
+    Handles the request to send a password reset link.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        """
+        Processes the request to send a password reset email.
+        """
+        serializer = PasswordResetRequestSerializer(data=request.data)
+
+        if serializer.is_valid():
+            email = serializer.validated_data['email']
+            user = User.objects.get(email=email)
+
+            # Token und UID wie gehabt generieren
+            token = default_token_generator.make_token(user)
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+            
+            # --- KORREKTUR START ---
+            
+            # 1. Den relativen URL-Pfad mit 'reverse' sicher erstellen.
+            #    'password_reset_confirm' ist der Name, den wir in urls.py vergeben haben.
+            relative_link = reverse('password_reset_confirm', kwargs={'uidb64': uid, 'token': token})
+            
+            # 2. Den vollständigen, absoluten Link mit dem Schema (http/https) und Host aus dem Request erstellen.
+            #    Das ist robust und funktioniert sowohl in der Entwicklung als auch in der Produktion.
+            reset_link = f"{request.scheme}://{request.get_host()}{relative_link}"
+
+            # --- KORREKTUR ENDE ---
+
+            mail_subject = 'Reset your password.'
+            message = render_to_string('password_reset_email.html', {
+                'user': user,
+                'reset_link': reset_link, # Den fertig erstellten Link an das Template übergeben
+            })
+            
+            email_message = EmailMessage(
+                mail_subject, message, to=[email]
+            )
+            email_message.send()
+
+            return Response(
+                {"detail": "An email has been sent to reset your password."}, 
+                status=status.HTTP_200_OK
+            )
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PasswordResetConfirmView(APIView):
+    """
+    Handles the actual password reset.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request, uidb64, token, *args, **kwargs):
+        """
+        Processes the password reset confirmation.
+        """
+        try:
+            uid = urlsafe_base64_decode(uidb64).decode()
+            user = User.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            user = None
+
+        if user is not None and default_token_generator.check_token(user, token):
+            # Token ist gültig. Jetzt validieren wir das neue Passwort.
+            serializer = PasswordResetConfirmSerializer(data=request.data)
+            
+            if serializer.is_valid():
+                new_password = serializer.validated_data['new_password']
+                # Setze das neue Passwort und speichere den Benutzer.
+                # set_password kümmert sich um das korrekte Hashing.
+                user.set_password(new_password)
+                user.save()
+                
+                return Response(
+                    {"detail": "Your Password has been successfully reset."}, 
+                    status=status.HTTP_200_OK
+                )
+            else:
+                # Die Passwörter stimmen nicht überein oder sind ungültig.
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        else:
+            # Der Link ist ungültig oder abgelaufen.
+            return Response(
+                {"error": "Activation link is invalid or has expired!"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 
 class LogoutView(APIView):
