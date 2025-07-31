@@ -272,21 +272,17 @@ class PasswordResetRequestView(APIView):
             email = serializer.validated_data['email']
             user = User.objects.get(email=email)
 
-            # Token und UID wie gehabt generieren
+            # Generate token and UID as usual
             token = default_token_generator.make_token(user)
             uid = urlsafe_base64_encode(force_bytes(user.pk))
-            
-            # --- KORREKTUR START ---
-            
-            # 1. Den relativen URL-Pfad mit 'reverse' sicher erstellen.
-            #    'password_reset_confirm' ist der Name, den wir in urls.py vergeben haben.
+                        
+            # 1. Securely create the relative URL path with 'reverse'.
+            #    'password_reset_confirm' is the name we assigned in urls.py.
             relative_link = reverse('password_reset_confirm', kwargs={'uidb64': uid, 'token': token})
             
-            # 2. Den vollständigen, absoluten Link mit dem Schema (http/https) und Host aus dem Request erstellen.
-            #    Das ist robust und funktioniert sowohl in der Entwicklung als auch in der Produktion.
+            # 2. Create the full, absolute link with the scheme (http/https) and host from the request.
+            #    This is robust and works in both development and production.
             reset_link = f"{request.scheme}://{request.get_host()}{relative_link}"
-
-            # --- KORREKTUR ENDE ---
 
             mail_subject = 'Reset your password.'
             message = render_to_string('password_reset_email.html', {
@@ -324,13 +320,13 @@ class PasswordResetConfirmView(APIView):
             user = None
 
         if user is not None and default_token_generator.check_token(user, token):
-            # Token ist gültig. Jetzt validieren wir das neue Passwort.
+             # Token is valid. Now we validate the new password.
             serializer = PasswordResetConfirmSerializer(data=request.data)
             
             if serializer.is_valid():
                 new_password = serializer.validated_data['new_password']
-                # Setze das neue Passwort und speichere den Benutzer.
-                # set_password kümmert sich um das korrekte Hashing.
+                # Set the new password and save the user.
+                # set_password takes care of the correct hashing.
                 user.set_password(new_password)
                 user.save()
                 
@@ -339,11 +335,11 @@ class PasswordResetConfirmView(APIView):
                     status=status.HTTP_200_OK
                 )
             else:
-                # Die Passwörter stimmen nicht überein oder sind ungültig.
+                # The passwords do not match or are invalid.
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         else:
-            # Der Link ist ungültig oder abgelaufen.
+            # The link is invalid or has expired.
             return Response(
                 {"error": "Activation link is invalid or has expired!"}, 
                 status=status.HTTP_400_BAD_REQUEST

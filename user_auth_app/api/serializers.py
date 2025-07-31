@@ -14,7 +14,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        # 'username' ist hier NICHT mehr aufgeführt!
+        # 'username' is NO longer listed here!
         fields = ['email', 'password', 'confirmed_password']
         extra_kwargs = {
             'password': {
@@ -26,16 +26,27 @@ class RegistrationSerializer(serializers.ModelSerializer):
         }
 
     def validate(self, data):
+        """
+        Checks if the two password entries match.
+        """
         if data['password'] != data['confirmed_password']:
             raise serializers.ValidationError({"password": "Passwords do not match."})
         return data
 
     def validate_email(self, value):
+        """
+        Checks if the email already exists in the database.
+        """
         if User.objects.filter(email=value).exists():
             raise serializers.ValidationError('Email already exists')
         return value
 
     def save(self):
+        """
+        Creates a new but inactive user.
+        Saves a new user to the database with the given email and password.
+        The username is set to the email. The user is initially marked as inactive.
+        """
         email = self.validated_data['email']
         password = self.validated_data['password']
 
@@ -43,7 +54,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
             email=email,
             username=email
         )
-        # Wichtig: Setzen Sie das Passwort und markieren Sie den Benutzer als inaktiv.
+        # Important: Set the password and mark the user as inactive.
         account.set_password(password)
         account.is_active = False
         account.save()
@@ -51,16 +62,28 @@ class RegistrationSerializer(serializers.ModelSerializer):
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    """
+    Custom serializer for obtaining token pairs that uses email instead of username.
+    Inherits from TokenObtainPairSerializer and customizes the authentication method to use email.
+    """
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
 
     def __init__(self, *args, **kwargs):
+        """
+        Initializes the serializer and removes the 'username' field.
+        """
         super().__init__(*args, **kwargs)
 
         if "username" in self.fields:
             self.fields.pop("username")
 
     def validate(self, attrs):
+        """
+        Validates the user's credentials.
+        Checks the email and password, ensures the user exists and is active.
+        If the credentials are valid, the username is added for token generation.
+        """
         email = attrs.get('email')
         password = attrs.get('password')
 
@@ -85,10 +108,14 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 class PasswordResetRequestSerializer(serializers.Serializer):
     """
     Serializer for requesting a password reset e-mail.
+    Validates that a user with the given email address exists.
     """
     email = serializers.EmailField()
     
     def validate_email(self, value):
+        """
+        Checks if a user with this email exists.
+        """
         if not User.objects.filter(email=value).exists():
             raise serializers.ValidationError("User with this email does not exist.")
         return value
@@ -97,6 +124,7 @@ class PasswordResetRequestSerializer(serializers.Serializer):
 class PasswordResetConfirmSerializer(serializers.Serializer):
     """
     Serializer for confirming a password reset.
+    Takes a new password and a confirmation and ensures they match.
     """
     new_password = serializers.CharField(write_only=True, min_length=8)
     confirm_password = serializers.CharField(write_only=True)
