@@ -111,7 +111,7 @@ class PasswordResetRequestSerializer(serializers.Serializer):
     Validates that a user with the given email address exists.
     """
     email = serializers.EmailField()
-    
+
     def validate_email(self, value):
         """
         Checks if a user with this email exists.
