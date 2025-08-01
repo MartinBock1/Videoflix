@@ -270,30 +270,28 @@ class PasswordResetRequestView(APIView):
 
         if serializer.is_valid():
             email = serializer.validated_data['email']
-            user = User.objects.get(email=email)
-
-            # Generate token and UID as usual
-            token = default_token_generator.make_token(user)
-            uid = urlsafe_base64_encode(force_bytes(user.pk))
-                        
-            # 1. Securely create the relative URL path with 'reverse'.
-            #    'password_reset_confirm' is the name we assigned in urls.py.
-            relative_link = reverse('password_reset_confirm', kwargs={'uidb64': uid, 'token': token})
             
-            # 2. Create the full, absolute link with the scheme (http/https) and host from the request.
-            #    This is robust and works in both development and production.
-            reset_link = f"{request.scheme}://{request.get_host()}{relative_link}"
+            try:
+                user = User.objects.get(email=email)                
+                token = default_token_generator.make_token(user)
+                uid = urlsafe_base64_encode(force_bytes(user.pk))
+                
+                relative_link = reverse('password_reset_confirm', kwargs={'uidb64': uid, 'token': token})
+                reset_link = f"{request.scheme}://{request.get_host()}{relative_link}"
 
-            mail_subject = 'Reset your password.'
-            message = render_to_string('password_reset_email.html', {
-                'user': user,
-                'reset_link': reset_link, # Den fertig erstellten Link an das Template übergeben
-            })
-            
-            email_message = EmailMessage(
-                mail_subject, message, to=[email]
-            )
-            email_message.send()
+                mail_subject = 'Reset your password.'
+                message = render_to_string('password_reset_email.html', {
+                    'user': user,
+                    'reset_link': reset_link,
+                })
+                
+                email_message = EmailMessage(
+                    mail_subject, message, to=[email]
+                )
+                email_message.send()
+
+            except User.DoesNotExist:
+                pass
 
             return Response(
                 {"detail": "An email has been sent to reset your password."}, 
