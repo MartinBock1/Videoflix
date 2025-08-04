@@ -2,30 +2,35 @@ import subprocess
 import shlex
 import os
 
-def convert_480p(source):
-    # Zerlege den Pfad in den Teil vor der Erweiterung (root) und die Erweiterung (ext)
-    # Beispiel: source = "/app/media/videos/Haloween.mp4"
-    # root wird zu: "/app/media/videos/Haloween"
-    # ext wird zu:  ".mp4"
-    root, ext = os.path.splitext(source)
-    
-    # Baue den neuen Ziel-Dateinamen korrekt zusammen
-    # Ergebnis: "/app/media/videos/Haloween_480p.mp4"
-    target = f"{root}_480p{ext}"
-    
-    # Der Befehl als String, jetzt mit dem korrekten `target`-Pfad
-    # (f-string wird hier für bessere Lesbarkeit verwendet)
-    cmd_string = f'ffmpeg -i "{source}" -s hd480 -c:v libx264 -crf 23 -c:a aac -strict -2 "{target}"'
-    
-    # Den String sicher in eine Liste von Argumenten aufteilen
-    cmd_list = shlex.split(cmd_string)
-    
+from .models import Video
+
+
+def convert_video_to_multiple_resolutions(video_id, crf_value=23):
     try:
-        print(f"Starte Konvertierung: {source} -> {target}")
-        subprocess.run(cmd_list, check=True)
-        print("Konvertierung erfolgreich abgeschlossen.")
-    except FileNotFoundError:
-        print("FEHLER: 'ffmpeg' wurde nicht gefunden. Ist es im System-PATH installiert?")
-    except subprocess.CalledProcessError as e:
-        print(f"Ein Fehler ist während der Videokonvertierung aufgetreten: {e}")
-    
+        video = Video.objects.get(pk=video_id)
+        source = video.video_file.path
+        print(f"Task gestartet für Video ID {video_id}: {source}")
+    except Video.DoesNotExist:
+        print(f"FEHLER: Video mit ID {video_id} wurde nicht gefunden. Task wird beendet.")
+        return
+
+    resolutions = [
+        ('480p', 'hd480'),
+        ('720p', 'hd720'),
+        ('1080p', 'hd1080')
+    ]
+    root, ext = os.path.splitext(source)
+
+    for suffix, size_param in resolutions:
+        target = f"{root}_{suffix}{ext}"
+        cmd_string = f'ffmpeg -i "{source}" -s {size_param} -c:v libx264 -crf {crf_value} -c:a aac -strict -2 "{target}"'
+        cmd_list = shlex.split(cmd_string)
+
+        try:
+            subprocess.run(cmd_list, check=True, capture_output=True, text=True)
+            print(f"  -> Erfolgreich erstellt: {target}")
+        except FileNotFoundError:
+            print("FEHLER im Worker: 'ffmpeg' wurde nicht gefunden. Ist es im Docker-Image des Workers installiert?")
+            return
+        except subprocess.CalledProcessError as e:
+            print(f"  -> FEHLER bei der Konvertierung zu {target}: {e.stderr.strip()}")
