@@ -12,14 +12,14 @@ def video_post_save(sender, instance, created, **kwargs):
 
     if created:
         print('new video created')
-        convert_480p(instance.thumbnail_url.path)
+        convert_480p(instance.video_file.path)
 
 
 @receiver(post_delete, sender=Video)
 def video_post_delete(sender, instance, **kwargs):
-    if instance.thumbnail_url:
-        if os.path.isfile(instance.thumbnail_url.path):
-            os.remove(instance.thumbnail_url.path)
+    if instance.video_file:
+        if os.path.isfile(instance.video_file.path):
+            os.remove(instance.video_file.path)
 
 
 post_save.connect(video_post_save, sender=Video)

@@ -213,3 +213,4 @@ if 'test' in sys.argv:
 
     # Verwende das In-Memory-E-Mail-Backend, um keine echten E-Mails zu senden
     EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
+    
