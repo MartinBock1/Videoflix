@@ -1,11 +1,13 @@
-import os, re
+import os
+import re
 from django.http import FileResponse, Http404
 from django.conf import settings
+from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 
-from .serializers import VideoSerializer
+from .serializers import VideoSerializer, VideoDetailSerializer
 from ..models import Video
 from user_auth_app.api.authentication import CookieJWTAuthentication
 
@@ -20,6 +22,18 @@ class VideoListView(APIView):
 
         return Response(serializer.data)
 
+class VideoDetailView(APIView):
+    authentication_classes = [CookieJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        try:
+            video = Video.objects.get(pk=pk)
+            serializer = VideoDetailSerializer(video, context={'request': request})
+            return Response(serializer.data)
+        except Video.DoesNotExist:
+            return Response({'error': 'Video not found'}, status=status.HTTP_404_NOT_FOUND)
+        
 
 class HLSPlaylistView(APIView):
     authentication_classes = [CookieJWTAuthentication]
@@ -30,21 +44,23 @@ class HLSPlaylistView(APIView):
             video = Video.objects.get(pk=movie_id)
             base_filename = os.path.splitext(os.path.basename(video.video_file.name))[0]
             playlist_path = os.path.join(
-                settings.MEDIA_ROOT, 
-                'videos', 
+                settings.MEDIA_ROOT,
+                'videos',
                 base_filename,
                 resolution,
                 'index.m3u8'
             )
 
             if os.path.exists(playlist_path):
-                response = FileResponse(open(playlist_path, 'rb'), content_type='application/vnd.apple.mpegurl')
+                response = FileResponse(open(playlist_path, 'rb'),
+                                        content_type='application/vnd.apple.mpegurl')
                 return response
             else:
                 raise Http404
 
         except Video.DoesNotExist:
             raise Http404
+
 
 class HLSSegmentView(APIView):
     authentication_classes = [CookieJWTAuthentication]
@@ -55,11 +71,11 @@ class HLSSegmentView(APIView):
             raise Http404("Invalid segment format.")
 
         try:
-            video = Video.objects.get(pk=movie_id)            
+            video = Video.objects.get(pk=movie_id)
             base_filename = os.path.splitext(os.path.basename(video.video_file.name))[0]
             segment_path = os.path.join(
-                settings.MEDIA_ROOT, 
-                'videos', 
+                settings.MEDIA_ROOT,
+                'videos',
                 base_filename,
                 resolution,
                 segment
