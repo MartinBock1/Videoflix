@@ -48,40 +48,33 @@ class RegistrationView(APIView):
         """
         # Instantiate the serializer with the data from the request.
         serializer = RegistrationSerializer(data=request.data)
-
         data = {}
         # Validate the serializer's data.
         if serializer.is_valid():
-            # If valid, save the new user to the database.
             saved_account = serializer.save()
-            current_site = get_current_site(request)
-            mail_subject = 'Activate your Videoflix account.'
 
-            message = render_to_string('acc_active_email.html', {
-                'user': saved_account,
-                'domain': current_site.domain,
-                'uid': urlsafe_base64_encode(force_bytes(saved_account.pk)),
+            relative_link = reverse('activate', kwargs={
+                'uidb64': urlsafe_base64_encode(force_bytes(saved_account.pk)),
                 'token': account_activation_token.make_token(saved_account),
             })
-            to_email = serializer.validated_data.get('email')
-            email = EmailMessage(
-                mail_subject, message, to=[to_email]
-            )
-            email.send()  # E-Mail senden
 
-            # Prepare the data to be sent in the response.
+            activation_link = request.build_absolute_uri(relative_link)
+
+            mail_subject = 'Activate your Videoflix account.'
+            message = render_to_string('acc_active_email.html', {
+                'user': saved_account,
+                'activation_link': activation_link,  # Wir übergeben die fertige URL
+            })
+            
+            to_email = serializer.validated_data.get('email')
+            email = EmailMessage(mail_subject, message, to=[to_email])
+            email.send()
+
             data = {
-                "user": {
-                    "id": saved_account.pk,
-                    "email": saved_account.email
-                },
-                # Geben Sie den Token zur Information zurück
-                "token": account_activation_token.make_token(saved_account)
+                "user": { "id": saved_account.pk, "email": saved_account.email },
             }
-            # Return the user data with a 200 OK status.
             return Response(data, status=status.HTTP_201_CREATED)
         else:
-            # If the data is invalid, return the errors with a 400 Bad Request status.
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 

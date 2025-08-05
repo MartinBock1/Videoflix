@@ -112,6 +112,7 @@ class PasswordResetRequestSerializer(serializers.Serializer):
     """
     email = serializers.EmailField()
 
+
 class PasswordResetConfirmSerializer(serializers.Serializer):
     """
     Serializer for confirming a password reset.

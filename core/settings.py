@@ -36,6 +36,18 @@ ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", default="localhost").split(",")
 CSRF_TRUSTED_ORIGINS = os.environ.get(
     "CSRF_TRUSTED_ORIGINS", default="http://localhost:4200").split(",")
 
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5500",
+    "http://127.0.0.1:5500",
+    # Fügen Sie hier weitere Origins hinzu, falls nötig (z.B. für Angular/React)
+    "http://localhost:4200",
+    "http://127.0.0.1:4200",
+]
+
+# Allow cookies to be sent with cross-origin requests.
+# This is CRUCIAL for your cookie-based authentication to work from the frontend.
+CORS_ALLOW_CREDENTIALS = True
+
 
 # Application definition
 
@@ -177,7 +189,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication',        
+        # 'rest_framework_simplejwt.authentication.JWTAuthentication',  
+        'user_auth_app.api.authentication.CookieJWTAuthentication',      
     ],
     
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
