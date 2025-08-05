@@ -23,7 +23,8 @@ class PasswordResetConfirmAPITest(APITestCase):
         }
 
     def test_password_reset_confirm_success(self):
-        url = reverse('password_reset_confirm', kwargs={'uidb64': self.uidb64, 'token': self.token})
+        url = reverse('password_reset_confirm', kwargs={
+                      'uidb64': self.uidb64, 'token': self.token})
 
         response = self.client.post(url, self.valid_password_data, format='json')
 
@@ -37,7 +38,8 @@ class PasswordResetConfirmAPITest(APITestCase):
 
     def test_password_reset_confirm_invalid_token(self):
         invalid_token = 'invalid-token'
-        url = reverse('password_reset_confirm', kwargs={'uidb64': self.uidb64, 'token': invalid_token})
+        url = reverse('password_reset_confirm', kwargs={
+                      'uidb64': self.uidb64, 'token': invalid_token})
 
         response = self.client.post(url, self.valid_password_data, format='json')
 
@@ -47,7 +49,8 @@ class PasswordResetConfirmAPITest(APITestCase):
 
     def test_password_reset_confirm_invalid_uid(self):
         invalid_uidb64 = 'invalid-uid'
-        url = reverse('password_reset_confirm', kwargs={'uidb64': invalid_uidb64, 'token': self.token})
+        url = reverse('password_reset_confirm', kwargs={
+                      'uidb64': invalid_uidb64, 'token': self.token})
 
         response = self.client.post(url, self.valid_password_data, format='json')
 
@@ -56,21 +59,23 @@ class PasswordResetConfirmAPITest(APITestCase):
         self.assertEqual(response.data, {"error": "Activation link is invalid or has expired!"})
 
     def test_password_reset_confirm_password_mismatch(self):
-        url = reverse('password_reset_confirm', kwargs={'uidb64': self.uidb64, 'token': self.token})
+        url = reverse('password_reset_confirm', kwargs={
+                      'uidb64': self.uidb64, 'token': self.token})
         mismatched_password_data = {
             'new_password': 'newsecurepassword123',
             'confirm_password': 'anotherpassword456'
         }
-        
+
         response = self.client.post(url, mismatched_password_data, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        
+
         self.assertIn('Passwords do not match.', response.data['password'])
 
     def test_password_reset_confirm_missing_password_fields(self):
-        url = reverse('password_reset_confirm', kwargs={'uidb64': self.uidb64, 'token': self.token})
-        
+        url = reverse('password_reset_confirm', kwargs={
+                      'uidb64': self.uidb64, 'token': self.token})
+
         response = self.client.post(url, {}, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
