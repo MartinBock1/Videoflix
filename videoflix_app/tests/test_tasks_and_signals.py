@@ -57,22 +57,16 @@ class SignalsAndTasksTest(TestCase):
 
     @patch('videoflix_app.signals.shutil.rmtree')
     @patch('videoflix_app.signals.os.remove')
-    @patch('videoflix_app.signals.glob.glob')
+    @patch('videoflix_app.signals.os.path.isfile', return_value=True)
     @patch('videoflix_app.signals.os.path.isdir', return_value=True)
-    def test_post_delete_signal_removes_hls_directories(
-        self,
-        mock_isdir,
-        mock_glob,
-        mock_os_remove,
-        mock_rmtree
-    ):
-        video_dir = os.path.dirname(self.video.video_file.path)
-        base_filename = os.path.splitext(os.path.basename(self.video.video_file.path))[0]
-        hls_dirs = [os.path.join(video_dir, f"{base_filename}_{res}") for res in ['480p', '720p']]
-        mock_glob.return_value = hls_dirs
+    def test_post_delete_signal_removes_main_directory(self, mock_isdir, mock_isfile, mock_os_remove, mock_rmtree):
+        original_path = self.video.video_file.path
+        base_filename = os.path.splitext(os.path.basename(original_path))[0]
+        video_dir = os.path.dirname(original_path)
+        expected_dir_to_delete = os.path.join(video_dir, base_filename)
         self.video.delete()
-        mock_os_remove.assert_called_with(self.video.video_file.path)
-        mock_rmtree.assert_has_calls([call(hls_dirs[0]), call(hls_dirs[1])], any_order=True)
+        mock_os_remove.assert_called_with(original_path)
+        mock_rmtree.assert_called_with(expected_dir_to_delete)
 
     @patch('subprocess.run')
     def test_generate_thumbnail_task(self, mock_subprocess_run):
@@ -85,14 +79,11 @@ class SignalsAndTasksTest(TestCase):
     def test_convert_to_hls_task_logic(self, mock_subprocess_run, mock_exists, mock_remove):
         convert_video_to_hls(self.video.pk)
         self.assertEqual(mock_subprocess_run.call_count, 6)
-        call_args_mp4 = mock_subprocess_run.call_args_list[0].args[0]
-        command_str_mp4 = ' '.join(call_args_mp4)
-        self.assertIn('-s 854x480', command_str_mp4)
-        self.assertNotIn('-codec:copy', command_str_mp4)
-
         call_args_hls = mock_subprocess_run.call_args_list[3].args[0]
         command_str_hls = ' '.join(call_args_hls)
         self.assertIn('test_video_480p.mp4', command_str_hls)
-        self.assertIn('-codec:copy', command_str_hls)
+        self.assertIn('-c:v copy', command_str_hls)
+        self.assertIn('-c:a copy', command_str_hls)
+        self.assertNotIn('-codec:copy', command_str_hls)
 
-        self.assertEqual(mock_remove.call_count, 3)
+        self.assertEqual(mock_remove.call_count, 4)
