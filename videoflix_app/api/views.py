@@ -9,7 +9,7 @@ from user_auth_app.api.authentication import CookieJWTAuthentication
 
 class VideoListView(APIView):
     authentication = [CookieJWTAuthentication]
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         videos = Video.objects.all()

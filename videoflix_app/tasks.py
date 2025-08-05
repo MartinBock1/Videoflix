@@ -15,15 +15,12 @@ def generate_thumbnail(video_id):
 
     source_path = video.video_file.path
     
-    # Zielpfad für das Thumbnail im 'thumbnails' Unterordner definieren
     thumbnail_dir = os.path.join(settings.MEDIA_ROOT, 'thumbnails')
-    os.makedirs(thumbnail_dir, exist_ok=True) # Ordner erstellen, falls nicht vorhanden
+    os.makedirs(thumbnail_dir, exist_ok=True)
     
-    # Dateinamen ohne Erweiterung extrahieren und .jpg anhängen
     filename = os.path.splitext(os.path.basename(source_path))[0]
     target_path = os.path.join(thumbnail_dir, f"{filename}.jpg")
 
-    # ffmpeg-Befehl: -ss springt zu Sekunde 1, -vframes 1 extrahiert genau einen Frame
     cmd_string = f'ffmpeg -i "{source_path}" -ss 00:00:01.000 -vframes 1 "{target_path}"'
     cmd_list = shlex.split(cmd_string)
 
@@ -31,10 +28,9 @@ def generate_thumbnail(video_id):
         subprocess.run(cmd_list, check=True, capture_output=True, text=True)
         print(f"  -> Erfolgreich Vorschaubild erstellt: {target_path}")
 
-        # Relativen Pfad zum Speichern im FileField des Modells erstellen
         relative_path = os.path.relpath(target_path, settings.MEDIA_ROOT)
         video.thumbnail_url.name = relative_path
-        video.save(update_fields=['thumbnail_url']) # Nur das thumbnail_url Feld aktualisieren
+        video.save(update_fields=['thumbnail_url'])
         
     except FileNotFoundError:
         print("FEHLER im Worker: 'ffmpeg' wurde nicht gefunden.")
