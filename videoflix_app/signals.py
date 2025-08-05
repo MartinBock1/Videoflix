@@ -1,8 +1,8 @@
 from django.dispatch import receiver
 from django.db.models.signals import post_save, post_delete
-import os, django_rq, glob
+import os, django_rq, glob, shutil 
 
-from .tasks import generate_thumbnail, convert_video_to_multiple_resolutions
+from .tasks import generate_thumbnail, convert_video_to_hls
 from .models import Video
 
 
@@ -14,34 +14,38 @@ def video_post_save(sender, instance, created, **kwargs):
         print(f"Neues Video '{instance.title}': Vorschaubild-Erstellung wird eingereiht.")
         queue.enqueue('videoflix_app.tasks.generate_thumbnail', instance.pk)
 
-        print(f"Neues Video '{instance.title}': Video-Konvertierung wird eingereiht.")
-        queue.enqueue('videoflix_app.tasks.convert_video_to_multiple_resolutions', instance.pk)
+        print(f"Neues Video '{instance.title}': HLS-Konvertierung wird eingereiht.")
+        queue.enqueue('videoflix_app.tasks.convert_video_to_hls', instance.pk)
 
 
 @receiver(post_delete, sender=Video)
 def video_post_delete(sender, instance, **kwargs):
-    files_to_delete = []
-
+    print(f"Lösche alle zugehörigen Dateien für: {instance.title}")
+    
     if instance.thumbnail_url and hasattr(instance.thumbnail_url, 'path'):
         if os.path.isfile(instance.thumbnail_url.path):
-            files_to_delete.append(instance.thumbnail_url.path)
+            try:
+                os.remove(instance.thumbnail_url.path)
+                print(f"  -> Gelöscht: {instance.thumbnail_url.path}")
+            except OSError as e:
+                print(f"  -> Fehler beim Löschen von {instance.thumbnail_url.path}: {e}")
 
     if instance.video_file and hasattr(instance.video_file, 'path'):
-        original_video_path = instance.video_file.path
-        if os.path.isfile(original_video_path):
-            files_to_delete.append(original_video_path)
+        original_path = instance.video_file.path
+        if os.path.isfile(original_path):
+            try:
+                os.remove(original_path)
+                print(f"  -> Gelöscht (Original): {original_path}")
+            except OSError as e:
+                print(f"  -> Fehler beim Löschen von {original_path}: {e}")
 
-        root, ext = os.path.splitext(original_video_path)
-        search_pattern = f"{root}_*{ext}"
-        generated_files = glob.glob(search_pattern)
-        files_to_delete.extend(generated_files)
+        base_filename = os.path.splitext(os.path.basename(original_path))[0]
+        video_dir = os.path.dirname(original_path)
+        main_video_dir_to_delete = os.path.join(video_dir, base_filename)
 
-    if files_to_delete:
-        print(f"Lösche alle zugehörigen Dateien für: {instance.title}")
-        for file_path in set(files_to_delete):  # set() verwenden, um Duplikate zu vermeiden
-            if os.path.isfile(file_path):
-                try:
-                    os.remove(file_path)
-                    print(f"  -> Gelöscht: {file_path}")
-                except OSError as e:
-                    print(f"  -> Fehler beim Löschen von {file_path}: {e}")
+        if os.path.isdir(main_video_dir_to_delete):
+            try:
+                shutil.rmtree(main_video_dir_to_delete)
+                print(f"  -> Verzeichnis gelöscht: {main_video_dir_to_delete}")
+            except OSError as e:
+                print(f"  -> Fehler beim Löschen von {main_video_dir_to_delete}: {e}")
