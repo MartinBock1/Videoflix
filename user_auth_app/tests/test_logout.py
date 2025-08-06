@@ -78,7 +78,7 @@ class LogoutViewTest(APITestCase):
         self.assertEqual(logout_response.status_code, status.HTTP_200_OK)
         self.assertEqual(
             logout_response.data['detail'],
-            "Log-Out successfully! All Tokens will be deleted. Refresh token is now invalid."
+            "Log-Out successfully! Tokens have been invalidated."
         )
 
         # 4. Assert that the server has instructed the client to delete the cookies.

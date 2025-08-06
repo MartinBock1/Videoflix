@@ -1,9 +1,6 @@
-from django.dispatch import receiver
+import os, django_rq, shutil
 from django.db.models.signals import post_save, post_delete
-import os
-import django_rq
-import glob
-import shutil
+from django.dispatch import receiver
 
 from .models import Video
 
@@ -30,10 +27,10 @@ def video_post_save(sender, instance, created, **kwargs):
 
         # Pass the primary key (pk) of the instance to the tasks instead of
         # the object itself. This is a best practice for background tasks.
-        print(f"Neues Video '{instance.title}': Vorschaubild-Erstellung wird eingereiht.")
+        print(f"New video '{instance.title}': thumbnail creation is enqueued.")
         queue.enqueue('videoflix_app.tasks.generate_thumbnail', instance.pk)
 
-        print(f"Neues Video '{instance.title}': HLS-Konvertierung wird eingereiht.")
+        print(f"New video '{instance.title}': HLS conversion is enqueued.")
         queue.enqueue('videoflix_app.tasks.convert_video_to_hls', instance.pk)
 
 
@@ -51,7 +48,7 @@ def video_post_delete(sender, instance, **kwargs):
         instance: The actual instance of the model being deleted.
         **kwargs: Wildcard keyword arguments.
     """
-    print(f"Lösche alle zugehörigen Dateien für: {instance.title}")
+    print(f"Delete all related files for: {instance.title}")
 
     # --- 1. Delete the thumbnail file ---
     # Check if the thumbnail field has a file and a valid path.
@@ -59,9 +56,9 @@ def video_post_delete(sender, instance, **kwargs):
         if os.path.isfile(instance.thumbnail_url.path):
             try:
                 os.remove(instance.thumbnail_url.path)
-                print(f"  -> Gelöscht: {instance.thumbnail_url.path}")
+                print(f"  -> Deleted: {instance.thumbnail_url.path}")
             except OSError as e:
-                print(f"  -> Fehler beim Löschen von {instance.thumbnail_url.path}: {e}")
+                print(f"  -> Error when deleting {instance.thumbnail_url.path}: {e}")
 
     # --- 2. Delete the video files and HLS directory ---
     # Check if the video_file field has a file and a valid path.
@@ -72,9 +69,9 @@ def video_post_delete(sender, instance, **kwargs):
         if os.path.isfile(original_path):
             try:
                 os.remove(original_path)
-                print(f"  -> Gelöscht (Original): {original_path}")
+                print(f"  -> Deleted (original): {original_path}")
             except OSError as e:
-                print(f"  -> Fehler beim Löschen von {original_path}: {e}")
+                print(f"  -> Error when deleting {original_path}: {e}")
 
         # Construct the path to the main directory containing HLS files.
         # e.g., 'media/videos/my_video_title/'
@@ -86,6 +83,6 @@ def video_post_delete(sender, instance, **kwargs):
         if os.path.isdir(main_video_dir_to_delete):
             try:
                 shutil.rmtree(main_video_dir_to_delete)
-                print(f"  -> Verzeichnis gelöscht: {main_video_dir_to_delete}")
+                print(f"  -> Directory deleted: {main_video_dir_to_delete}")
             except OSError as e:
-                print(f"  -> Fehler beim Löschen von {main_video_dir_to_delete}: {e}")
+                print(f"  -> Error when deleting {main_video_dir_to_delete}: {e}")
