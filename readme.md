@@ -62,8 +62,13 @@ Follow these steps to run the project locally.
     ```
 
 2.  **Create Environment Variables:**
-    Create a `.env` file in the project's root directory by copying `env.example` or by creating a new file with the following content. The default values are generally fine for local development.
+    Create a `.env` file in the project's root directory by copying `env.example`:
 
+    ```bash
+    cp .env.template .env
+    ```
+
+     Or by creating a new file with the following content. The default values are generally fine for local development.
     ```ini
     # Django
     SECRET_KEY=your-super-secret-key-here
@@ -88,14 +93,14 @@ Follow these steps to run the project locally.
     DJANGO_SUPERUSER_PASSWORD=adminpassword
     ```
 
-3.  **Build and Start Docker Containers:**
+4.  **Build and Start Docker Containers:**
     This command builds the images, starts all services (web API, database, Redis, RQ worker), and runs the database migrations.
     ```bash
     docker-compose up --build
     ```
     You can add `-d` to run the containers in the background.
 
-4.  **That's it!**
+5.  **That's it!**
     The application is now accessible at `http://127.0.0.1:8000`.
 
 ---
