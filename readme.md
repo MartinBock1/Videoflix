@@ -88,21 +88,13 @@ Follow these steps to run the project locally.
      Or by creating a new file with the following content. The default values are generally fine for local development.
     ```ini
     # Django
-    SECRET_KEY=your-super-secret-key-here
-    DEBUG=True
+    DEBUG=False
     ALLOWED_HOSTS=localhost,127.0.0.1
 
     # PostgreSQL Database
     DB_NAME=videoflix_db
     DB_USER=videoflix_user
     DB_PASSWORD=supersecretpassword
-    DB_HOST=db
-    DB_PORT=5432
-
-    # Redis
-    REDIS_HOST=redis
-    REDIS_PORT=6379
-    REDIS_DB=0
 
     # Django Superuser (will be created automatically on startup)
     DJANGO_SUPERUSER_USERNAME=admin
@@ -113,6 +105,10 @@ Follow these steps to run the project locally.
 5.  **Build and Start Docker Containers:**
     This command builds the images, starts all services (web API, database, Redis, RQ worker), and runs the database migrations.
     ```bash
+    # just for Mac user
+    chmod +x backend.entrypoint.sh
+
+    # for all systems
     docker-compose up --build
     ```
     You can add `-d` to run the containers in the background.
@@ -143,7 +139,7 @@ The project automatically generates interactive API documentation. After startin
 The comprehensive test suite can be executed with a single command while the Docker containers are running.
 
 ```bash
-docker-compose exec <YOUR_IMAGE_NAME> python manage.py test
+docker-compose exec web python manage.py test
 ```
 
 ---
