@@ -2,6 +2,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.mail import EmailMessage
+from django.shortcuts import redirect
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.encoding import force_bytes, force_str
@@ -67,7 +68,7 @@ class RegistrationView(APIView):
                 'token': account_activation_token.make_token(saved_account),
             })
 
-            activation_link = request.build_absolute_uri(relative_link)
+            activation_link = f"{request.build_absolute_uri(relative_link)}?redirect=true"
             mail_subject = 'Activate your Videoflix account.'
             message = render_to_string('acc_active_email.html', {
                 'user': saved_account,
@@ -78,7 +79,7 @@ class RegistrationView(APIView):
             email = EmailMessage(mail_subject, message, to=[to_email])
             email.send()
             # --- End of Email Activation Logic ---
-            
+
             data = {
                 "message": ("User registered successfully. \
                     Please check your email to activate your account."),
@@ -114,6 +115,9 @@ class ActivationView(APIView):
             Response: An HTTP response indicating success or failure of the
                       activation attempt.
         """
+        frontend_success_url = 'http://127.0.0.1:5500/pages/auth/activation-success.html'
+        should_redirect = request.query_params.get('redirect') == 'true'
+
         try:
             uid = force_str(urlsafe_base64_decode(uidb64))
             user = User.objects.get(pk=uid)
@@ -123,10 +127,15 @@ class ActivationView(APIView):
         if user is not None and account_activation_token.check_token(user, token):
             user.is_active = True
             user.save()
-            return Response(
-                {"message": "Account successfully activated!"},
-                status=status.HTTP_200_OK
-            )
+            if should_redirect:
+                return redirect(frontend_success_url)
+            else:
+                # Standardverhalten für API-Tests: JSON-Antwort
+                return Response(
+                    {"message": "Account successfully activated!"},
+                    status=status.HTTP_200_OK
+                )
+
         else:
             return Response(
                 {"error": "Activation link is invalid!"},
@@ -249,7 +258,7 @@ class CookieTokenRefreshView(TokenRefreshView):
                 "access": "new_access_token"
             }
         )
-       
+
         response.set_cookie(
             key="access_token",
             value=access_token,
@@ -291,7 +300,7 @@ class PasswordResetRequestView(APIView):
 
         if serializer.is_valid():
             email = serializer.validated_data['email']
-            
+
             try:
                 user = User.objects.get(email=email)
                 token = default_token_generator.make_token(user)
@@ -381,7 +390,7 @@ class PasswordResetConfirmView(APIView):
 
         else:
             return Response(
-                {"error":"Password reset link is invalid or has expired!"},
+                {"error": "Password reset link is invalid or has expired!"},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -430,7 +439,7 @@ class LogoutView(APIView):
 
             return response
         except Exception as e:
-            
+
             return Response(
                 {"error": "Invalid refresh token."},
                 status=status.HTTP_400_BAD_REQUEST
