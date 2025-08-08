@@ -89,7 +89,7 @@ Follow these steps to run the project locally.
     ```ini
     # Django
     SECRET_KEY=your-super-secret-key-here
-    DEBUG=True
+    DEBUG=False
     ALLOWED_HOSTS=localhost,127.0.0.1
 
     # PostgreSQL Database
