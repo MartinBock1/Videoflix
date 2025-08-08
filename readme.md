@@ -113,6 +113,9 @@ Follow these steps to run the project locally.
 5.  **Build and Start Docker Containers:**
     This command builds the images, starts all services (web API, database, Redis, RQ worker), and runs the database migrations.
     ```bash
+    # just for Mac user
+    chmod +x backend.entrypoint.sh
+    
     docker-compose up --build
     ```
     You can add `-d` to run the containers in the background.
