@@ -55,13 +55,30 @@ Follow these steps to run the project locally.
 
 ### Installation & Execution
 
-1.  **Clone the Repository:**
-    ```bash
-    git clone <REPOSITORY-LINK>
-    cd <projectfolder>
-    ```
+1. **Clone the repository:**
 
-2.  **Create Environment Variables:**
+   ```bash
+   git clone <REPOSITORY-LINK>
+   cd <projectfolder>
+   
+2. **Set up a virtual environment:**
+
+    ```bash
+    python -m venv env
+    env/Scripts/activate  # Windows
+    source env/bin/activate  # macOS/Linux
+    ```
+    *Note: On macOS/Linux, python3 may have to be used instead of python.
+
+3.  **Install the required packages:**
+    The `requirements.txt` file contains all necessary Python packages.
+    ```bash
+    pip install -r requirements.txt
+    ```
+    *Note: If a `requirements.txt` file is not present, you can generate one from the existing project setup using `pip freeze > requirements.txt`.*
+
+
+4.  **Create Environment Variables:**
     Create a `.env` file in the project's root directory by copying `env.example`:
 
     ```bash
@@ -93,14 +110,14 @@ Follow these steps to run the project locally.
     DJANGO_SUPERUSER_PASSWORD=adminpassword
     ```
 
-4.  **Build and Start Docker Containers:**
+5.  **Build and Start Docker Containers:**
     This command builds the images, starts all services (web API, database, Redis, RQ worker), and runs the database migrations.
     ```bash
     docker-compose up --build
     ```
     You can add `-d` to run the containers in the background.
 
-5.  **That's it!**
+6.  **That's it!**
     The application is now accessible at `http://127.0.0.1:8000`.
 
 ---
@@ -126,7 +143,7 @@ The project automatically generates interactive API documentation. After startin
 The comprehensive test suite can be executed with a single command while the Docker containers are running.
 
 ```bash
-docker-compose exec videoflix_backend python manage.py test
+docker-compose exec <YOUR_IMAGE_NAME> python manage.py test
 ```
 
 ---
