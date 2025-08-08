@@ -19,14 +19,8 @@ def video_post_save(sender, instance, created, **kwargs):
         created (bool): True if a new record was created.
         **kwargs: Wildcard keyword arguments.
     """
-    # The 'created' flag ensures these tasks run only once when the video
-    # is first uploaded, not every time the model is updated.
     if created:
-        # Get the default RQ queue.
         queue = django_rq.get_queue('default')
-
-        # Pass the primary key (pk) of the instance to the tasks instead of
-        # the object itself. This is a best practice for background tasks.
         print(f"New video '{instance.title}': thumbnail creation is enqueued.")
         queue.enqueue('videoflix_app.tasks.generate_thumbnail', instance.pk)
 
@@ -51,7 +45,6 @@ def video_post_delete(sender, instance, **kwargs):
     print(f"Delete all related files for: {instance.title}")
 
     # --- 1. Delete the thumbnail file ---
-    # Check if the thumbnail field has a file and a valid path.
     if instance.thumbnail_url and hasattr(instance.thumbnail_url, 'path'):
         if os.path.isfile(instance.thumbnail_url.path):
             try:
@@ -61,7 +54,6 @@ def video_post_delete(sender, instance, **kwargs):
                 print(f"  -> Error when deleting {instance.thumbnail_url.path}: {e}")
 
     # --- 2. Delete the video files and HLS directory ---
-    # Check if the video_file field has a file and a valid path.
     if instance.video_file and hasattr(instance.video_file, 'path'):
         original_path = instance.video_file.path
 
@@ -74,7 +66,6 @@ def video_post_delete(sender, instance, **kwargs):
                 print(f"  -> Error when deleting {original_path}: {e}")
 
         # Construct the path to the main directory containing HLS files.
-        # e.g., 'media/videos/my_video_title/'
         base_filename = os.path.splitext(os.path.basename(original_path))[0]
         video_dir = os.path.dirname(original_path)
         main_video_dir_to_delete = os.path.join(video_dir, base_filename)

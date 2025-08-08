@@ -76,8 +76,6 @@ def convert_video_to_hls(video_id):
         source_path = video.video_file.path
         base_filename = os.path.splitext(os.path.basename(source_path))[0]
         base_output_dir = os.path.dirname(source_path)
-        # The main output directory will be named after the video file.
-        # e.g., /media/videos/my_awesome_video/
         main_video_dir = os.path.join(base_output_dir, base_filename)
         os.makedirs(main_video_dir, exist_ok=True)
 

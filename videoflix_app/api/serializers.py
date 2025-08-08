@@ -11,7 +11,6 @@ class VideoSerializer(serializers.ModelSerializer):
     Includes basic video information like ID, creation timestamp, title,
     description, thumbnail URL, and category.
     """
-    # A read-only field that returns the URL of the video's thumbnail.
     thumbnail_url = serializers.SerializerMethodField()
 
     class Meta:
@@ -39,18 +38,13 @@ class VideoSerializer(serializers.ModelSerializer):
         Returns:
             str: The absolute URL of the thumbnail, or an empty string.
         """
-        # Get the request object from the serializer context.
         request = self.context.get('request')
         if request is None:
-            # If no request is available, return None, indicating
-            # the URL cannot be constructed.
             return None
 
         if obj.thumbnail_url:
-            # Build the absolute URI from the thumbnail URL.
             return request.build_absolute_uri(obj.thumbnail_url.url)
 
-        # If no thumbnail URL exists, return an empty string.
         return ""
 
 
@@ -61,7 +55,6 @@ class VideoDetailSerializer(VideoSerializer):
     Inherits from VideoSerializer and adds HLS (HTTP Live Streaming) URLs
     for different resolutions.
     """
-    # A read-only field that returns a dictionary of HLS URLs.
     hls_urls = serializers.SerializerMethodField()
 
     class Meta(VideoSerializer.Meta):
@@ -85,23 +78,18 @@ class VideoDetailSerializer(VideoSerializer):
             dict: A dictionary containing HLS URLs for each resolution.
                  Example: {'480p': 'http://...', '720p': 'http://...', ...}
         """
-        # Get the request object from the serializer context.
         request = self.context.get('request')
         if not request:
-            # If no request is available, return None, indicating the
-            # URLs cannot be constructed.
             return None
 
         urls = {}
         resolutions = ['480p', '720p', '1080p']
 
         for res in resolutions:
-            # Build the relative URL using the 'hls-playlist' URL pattern name.
             relative_url = reverse(
                 'hls-playlist',
                 kwargs={'movie_id': obj.pk, 'resolution': res}
             )
-            # Build the absolute URI using the relative URL.
             urls[res] = request.build_absolute_uri(relative_url)
 
         return urls

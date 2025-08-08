@@ -42,35 +42,20 @@ class CookieJWTAuthentication(JWTAuthentication):
             rest_framework_simplejwt.exceptions.InvalidToken: If the token is
                 found but is invalid, expired, or malformed.
         """
-        # Attempt to retrieve the access token from the request's cookies.
         access_token = request.COOKIES.get('access_token')
 
-        # If no access token is found in the cookies, we cannot authenticate.
-        # Return None to signal that authentication has not been attempted.
         if not access_token:
             return None
 
         
         try:
-            # If a token is found, use the parent class's method to validate it.
-            # This will raise an `InvalidToken` exception if validation fails.
             validated_token = self.get_validated_token(access_token)
-            
-            # If the token is valid, use the parent class's method to retrieve the
-            # user associated with this token.
             user = self.get_user(validated_token)
             
         except (InvalidToken, TokenError) as e:
-            # Log the error for debugging.
-            # print(f“CookieJWTAuthentication Error: {e}”)
-            # Important: Raise the exception so that DRF returns a 401 error
-            # with error details (e.g., “token_not_valid”).
-            # If you return `None` here, the error will be “swallowed.”
             raise InvalidToken(f"Token is invalid or expired: {e}")
         
         if not user or not user.is_active:
-            # No user found or user is inactive.
             return None
 
-        # On success, return the user and the validated token.
         return user, validated_token

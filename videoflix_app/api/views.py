@@ -17,7 +17,6 @@ class VideoListView(APIView):
 
     Requires the user to be authenticated via a cookie-based JWT.
     """
-    # Define the authentication and permission classes for this view.
     authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
@@ -28,10 +27,7 @@ class VideoListView(APIView):
         Returns:
             Response: A DRF Response object containing the serialized video data.
         """
-        # Retrieve all video objects from the database.
         videos = Video.objects.all()
-        # Serialize the list of videos. 'many=True' is required for querysets.
-        # The 'request' context is passed for generating absolute URLs.
         serializer = VideoSerializer(videos, many=True, context={'request': request})
 
         return Response(serializer.data)
@@ -57,13 +53,10 @@ class VideoDetailView(APIView):
             Response: A DRF Response with the video's details or a 404 error.
         """
         try:
-            # Retrieve the specific video by its primary key.
             video = Video.objects.get(pk=pk)
-            # Use the detail serializer to include more information (e.g., HLS URLs).
             serializer = VideoDetailSerializer(video, context={'request': request})
             return Response(serializer.data)
         except Video.DoesNotExist:
-            # If the video is not found, return a 404 Not Found response.
             return Response({'error': 'Video not found'}, status=status.HTTP_404_NOT_FOUND)
         
 
@@ -90,11 +83,7 @@ class HLSPlaylistView(APIView):
         """
         try:
             video = Video.objects.get(pk=movie_id)
-            # Get the base filename of the original video (without extension).
-            # This is used as the directory name for the HLS files.
             base_filename = os.path.splitext(os.path.basename(video.video_file.name))[0]
-            
-            # Construct the full path to the .m3u8 playlist file.
             playlist_path = os.path.join(
                 settings.MEDIA_ROOT,
                 'videos',
@@ -104,17 +93,13 @@ class HLSPlaylistView(APIView):
             )
 
             if os.path.exists(playlist_path):
-                # Use FileResponse for efficient streaming of the file.
-                # Set the correct MIME type for HLS playlists.
                 response = FileResponse(open(playlist_path, 'rb'),
                                         content_type='application/vnd.apple.mpegurl')
                 return response
             else:
-                # If the playlist file does not exist, raise a 404 error.
                 raise Http404
 
         except Video.DoesNotExist:
-            # If the video itself does not exist, raise a 404 error.
             raise Http404
 
 
@@ -140,16 +125,12 @@ class HLSSegmentView(APIView):
         Returns:
             FileResponse: A response streaming the .ts file, or a 404 error.
         """
-        # Security check: Ensure the segment name has the expected format
-        # (digits followed by .ts) to prevent directory traversal attacks.
         if not re.match(r'\d+\.ts$', segment):
             raise Http404("Invalid segment format.")
 
         try:
             video = Video.objects.get(pk=movie_id)
-            # Get the base filename to construct the path.
             base_filename = os.path.splitext(os.path.basename(video.video_file.name))[0]
-            # Construct the full path to the .ts segment file.
             segment_path = os.path.join(
                 settings.MEDIA_ROOT,
                 'videos',
@@ -159,14 +140,10 @@ class HLSSegmentView(APIView):
             )
 
             if os.path.exists(segment_path):
-                # Use FileResponse for efficient streaming of the video segment.
-                # Set the correct MIME type for MPEG Transport Stream files.
                 response = FileResponse(open(segment_path, 'rb'), content_type='video/MP2T')
                 return response
             else:
-                # If the segment file does not exist, raise a 404 error.
                 raise Http404
 
         except Video.DoesNotExist:
-            # If the video does not exist, raise a 404 error.
             raise Http404

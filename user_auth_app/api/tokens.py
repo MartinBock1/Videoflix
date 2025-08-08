@@ -26,5 +26,4 @@ class AccountActivationTokenGenerator(PasswordResetTokenGenerator):
             six.text_type(user.is_active)
         )
 
-# Create an instance of the AccountActivationTokenGenerator
 account_activation_token = AccountActivationTokenGenerator()
