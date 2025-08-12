@@ -1,10 +1,6 @@
 from django.contrib.auth.models import User
 from django.contrib.auth.tokens import default_token_generator
-from django.contrib.sites.shortcuts import get_current_site
 from django.core.mail import EmailMessage
-from django.shortcuts import redirect
-from django.template.loader import render_to_string
-from django.urls import reverse
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 
@@ -33,9 +29,9 @@ class RegistrationView(APIView):
     details via a POST request. If the data is valid, a new user account is
     created but marked as inactive. An activation email is then sent to the
     user's provided email address.
-    """
+    """    
     permission_classes = [AllowAny]
-
+        
     def post(self, request):
         """
         Processes the user registration request.
@@ -52,6 +48,7 @@ class RegistrationView(APIView):
                       status with the new user's basic data. If validation fails,
                       it returns a 400 BAD REQUEST status with the validation errors.
         """
+        
         serializer = RegistrationSerializer(data=request.data)
         data = {}
 
@@ -60,20 +57,23 @@ class RegistrationView(APIView):
 
             # --- Email Activation Logic ---
 
-            # Generate a relative URL for the account activation endpoint.
+            # Generate the activation parameters
             # 'uidb64' is the user's primary key encoded in base64.
             # 'token' is the security token to verify the user's identity.
-            relative_link = reverse('activate', kwargs={
-                'uidb64': urlsafe_base64_encode(force_bytes(saved_account.pk)),
-                'token': account_activation_token.make_token(saved_account),
-            })
+            uidb64 = urlsafe_base64_encode(force_bytes(saved_account.pk))
+            token = account_activation_token.make_token(saved_account)
 
-            activation_link = f"{request.build_absolute_uri(relative_link)}?redirect=true"
+            # Create direct link to frontend activation page with parameters
+            activation_link = f"http://127.0.0.1:5500/pages/auth/activate.html?uid={uidb64}&token={token}"
             mail_subject = 'Activate your Videoflix account.'
-            message = render_to_string('acc_active_email.html', {
-                'user': saved_account,
-                'activation_link': activation_link,
-            })
+
+            # Create plain text message to avoid HTML escaping
+            message = f"""Hi {saved_account.username},
+Please click on the link below to activate your account:
+
+{activation_link}
+
+If you did not request this, please ignore this email."""
 
             to_email = serializer.validated_data.get('email')
             email = EmailMessage(mail_subject, message, to=[to_email])
@@ -92,53 +92,56 @@ class RegistrationView(APIView):
 
 class ActivationView(APIView):
     """
-    "Handles the account activation process.
+    Handles the account activation process.
 
-    This view is accessed via the activation link sent to the user's email.
-    It verifies the user ID and token from the URL to activate the account.
+    This view is accessed via API calls from the frontend after the user
+    clicks the activation link in their email. It verifies the user ID 
+    and token from the URL to activate the account.
     """
     permission_classes = [AllowAny]
 
     def get(self, request, uidb64, token):
         """
         Processes the GET request to activate a user account.
+        This endpoint is called by the frontend after the user clicks the activation link.
 
         It decodes the user ID from the base64 encoded string and checks
         if the provided token is valid for that user.
 
         Args:
             request (Request): The HTTP request object.
-            uidb64 (str): The user's primary key encoded in base64.
+            uidb64 (str): The user's primary key encoded in base64 (passed as 'uid' in URL).
             token (str): The activation token for the user.
 
         Returns:
             Response: An HTTP response indicating success or failure of the
                       activation attempt.
         """
-        frontend_success_url = 'http://127.0.0.1:5500/pages/auth/activation-success.html'
-        should_redirect = request.query_params.get('redirect') == 'true'
-
         try:
             uid = force_str(urlsafe_base64_decode(uidb64))
             user = User.objects.get(pk=uid)
         except (TypeError, ValueError, OverflowError, User.DoesNotExist):
-            user = None
+            return Response(
+                {"error": "Invalid activation link!"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         if user is not None and account_activation_token.check_token(user, token):
-            user.is_active = True
-            user.save()
-            if should_redirect:
-                return redirect(frontend_success_url)
-            else:
-                # Standardverhalten für API-Tests: JSON-Antwort
+            if user.is_active:
                 return Response(
-                    {"message": "Account successfully activated!"},
+                    {"message": "Account is already activated!"},
                     status=status.HTTP_200_OK
                 )
 
+            user.is_active = True
+            user.save()
+            return Response(
+                {"message": "Account successfully activated!"},
+                status=status.HTTP_200_OK
+            )
         else:
             return Response(
-                {"error": "Activation link is invalid!"},
+                {"error": "Activation link is invalid or has expired!"},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -306,19 +309,23 @@ class PasswordResetRequestView(APIView):
                 token = default_token_generator.make_token(user)
                 uid = urlsafe_base64_encode(force_bytes(user.pk))
 
-                relative_link = reverse(
-                    'password_reset_confirm',
-                    kwargs={'uidb64': uid, 'token': token}
-                )
-                reset_link = (
-                    f"{request.scheme}://{request.get_host()}{relative_link}"
-                )
+                # Create direct link to frontend password reset page with parameters
+                reset_link = f"http://127.0.0.1:5500/pages/auth/confirm_password.html?uid={uid}&token={token}"
 
                 mail_subject = 'Reset your password.'
-                message = render_to_string('password_reset_email.html', {
-                    'user': user,
-                    'reset_link': reset_link,
-                })
+                
+                # Create plain text message to avoid HTML escaping
+                message = f"""Hello {user.username},
+
+You requested a password reset for your account.
+Please go to the following link to set a new password:
+
+{reset_link}
+
+If you didn't request this, you can safely ignore this email.
+
+Thanks,
+Martin Bock"""
 
                 email_message = EmailMessage(
                     mail_subject, message, to=[email]
