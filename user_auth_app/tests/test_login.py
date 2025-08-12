@@ -28,7 +28,6 @@ class LoginTests(APITestCase):
         self.user.is_active = True
         self.user.save()
 
-        # Define the correct URL name for the login endpoint
         self.login_url = reverse('token_obtain_pair')
 
     def test_login_success(self):
@@ -46,16 +45,12 @@ class LoginTests(APITestCase):
         }
         response = self.client.post(self.login_url, data, format='json')
 
-        # 1. Assert that the request was successful (200 OK)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        # 2. Assert the correct structure and content of the response body
         self.assertEqual(response.data['detail'], 'login successful')
         self.assertIn('user', response.data)
         self.assertEqual(response.data['user']['id'], self.user.id)
         self.assertEqual(response.data['user']['username'], self.user.username)
 
-        # 3. Assert that the HTTPOnly cookies have been set
         self.assertIn('access_token', response.cookies)
         self.assertIn('refresh_token', response.cookies)
 
@@ -67,7 +62,6 @@ class LoginTests(APITestCase):
         asserts that the request fails with a 400 Bad Request status and
         returns the specific error message for inactive accounts.
         """
-        # Create a new, inactive user
         inactive_user = User.objects.create_user(
             username='inactive@example.com',
             email='inactive@example.com',
@@ -138,11 +132,8 @@ class LoginTests(APITestCase):
             "password": ""
         }
         response = self.client.post(self.login_url, data, format='json')
-
-        # Assert that the request is a bad request due to validation failure
+        
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-        # Assert that the response contains specific error details for each field
         self.assertIn('email', response.data)
         self.assertIn('password', response.data)
         self.assertEqual(response.data['email'][0], 'This field may not be blank.')

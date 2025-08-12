@@ -171,6 +171,6 @@ class RegistrationAndActivationTests(APITestCase):
         activation_url = reverse('activate', kwargs={'uidb64': uid, 'token': token})
         response = self.client.get(activation_url)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data['error'], 'Activation link is invalid!')
+        self.assertEqual(response.data['error'], 'Activation link is invalid or has expired!')
         user.refresh_from_db()
         self.assertFalse(user.is_active)

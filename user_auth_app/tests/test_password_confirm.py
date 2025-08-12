@@ -29,12 +29,9 @@ class PasswordResetConfirmAPITest(APITestCase):
             username='confirmuser',
             email='confirm@example.com',
             password='oldstrongpassword'
-        )
-        # Generate the user's ID encoded in base64.
+        )        
         self.uidb64 = urlsafe_base64_encode(force_bytes(self.user.pk))
-        # Generate a valid, one-time token for the user.
         self.token = default_token_generator.make_token(self.user)
-        # Prepare a valid payload with matching passwords.
         self.valid_password_data = {
             'new_password': 'newsecurepassword123',
             'confirm_password': 'newsecurepassword123'
@@ -59,7 +56,6 @@ class PasswordResetConfirmAPITest(APITestCase):
             'detail': 'Your Password has been successfully reset.'}
         )
 
-        # Verify the password was changed in the database.
         self.user.refresh_from_db()
         self.assertTrue(self.user.check_password('newsecurepassword123'))
         self.assertFalse(self.user.check_password('oldstrongpassword'))
@@ -80,7 +76,6 @@ class PasswordResetConfirmAPITest(APITestCase):
         response = self.client.post(url, self.valid_password_data, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
         self.assertEqual(
             response.data, {"error": "Password reset link is invalid or has expired!"})
 
@@ -122,7 +117,6 @@ class PasswordResetConfirmAPITest(APITestCase):
         response = self.client.post(url, mismatched_password_data, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
         self.assertIn('Passwords do not match.', response.data['password'])
 
     def test_password_reset_confirm_missing_password_fields(self):

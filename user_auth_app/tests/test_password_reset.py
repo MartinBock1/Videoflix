@@ -49,10 +49,10 @@ class PasswordResetRequestAPITest(APITestCase):
             response.data['detail'],
             'If an account with this email exists, an email has been sent to reset your password.'
         )
-        # Check that one email was sent.
+        
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].to[0], 'test@example.com')
-        # Check that the email contains a valid token for the user.
+        
         token = default_token_generator.make_token(self.user)
         self.assertIn(token, mail.outbox[0].body)
 
@@ -72,7 +72,7 @@ class PasswordResetRequestAPITest(APITestCase):
             response.data['detail'],
             'If an account with this email exists, an email has been sent to reset your password.'
         )
-        # Check that no email was sent.
+        
         self.assertEqual(len(mail.outbox), 0)
 
     def test_password_reset_request_missing_email_field(self):
