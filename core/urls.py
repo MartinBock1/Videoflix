@@ -14,6 +14,7 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+import os
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
@@ -24,6 +25,7 @@ from drf_spectacular.views import (
     SpectacularRedocView
 )
 from debug_toolbar.toolbar import debug_toolbar_urls
+from .views import ServeMediaView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -34,10 +36,14 @@ urlpatterns = [
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
+    
+    # Custom media file serving for development/Docker
+    # This serves media files (like thumbnails, videos) when using Gunicorn in Docker,
+    # since Gunicorn doesn't serve static/media files like Django's runserver does.
+    # In production, remove this line and configure Nginx/Apache to serve media files.
+    path('media/<path:path>', ServeMediaView.as_view(), name='serve_media'),
 ] + debug_toolbar_urls()
 
-# Only serve media files in development
-# In production, use Nginx/Apache to serve media files
+# Serve static files only in DEBUG mode  
 if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

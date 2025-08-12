@@ -64,16 +64,19 @@ class RegistrationView(APIView):
             token = account_activation_token.make_token(saved_account)
 
             # Create direct link to frontend activation page with parameters
-            activation_link = f"http://127.0.0.1:5500/pages/auth/activate.html?uid={uidb64}&token={token}"
+            activation_link = (
+                "http://127.0.0.1:5500/pages/auth/activate.html"
+                f"?uid={uidb64}&token={token}"
+            )
             mail_subject = 'Activate your Videoflix account.'
 
             # Create plain text message to avoid HTML escaping
-            message = f"""Hi {saved_account.username},
-Please click on the link below to activate your account:
-
-{activation_link}
-
-If you did not request this, please ignore this email."""
+            message = (
+                f"Hi {saved_account.username},\n"
+                "Please click on the link below to activate your account:\n\n"
+                f"{activation_link}\n\n"
+                "If you did not request this, please ignore this email."
+            )
 
             to_email = serializer.validated_data.get('email')
             email = EmailMessage(mail_subject, message, to=[to_email])
@@ -81,8 +84,10 @@ If you did not request this, please ignore this email."""
             # --- End of Email Activation Logic ---
 
             data = {
-                "message": ("User registered successfully. \
-                    Please check your email to activate your account."),
+                "message": (
+                    "User registered successfully. "
+                    "Please check your email to activate your account."
+                ),
                 "user": {"id": saved_account.pk, "email": saved_account.email},
             }
             return Response(data, status=status.HTTP_201_CREATED)
@@ -310,22 +315,23 @@ class PasswordResetRequestView(APIView):
                 uid = urlsafe_base64_encode(force_bytes(user.pk))
 
                 # Create direct link to frontend password reset page with parameters
-                reset_link = f"http://127.0.0.1:5500/pages/auth/confirm_password.html?uid={uid}&token={token}"
+                reset_link = (
+                    "http://127.0.0.1:5500/pages/auth/confirm_password.html"
+                    f"?uid={uid}&token={token}"
+                )
 
                 mail_subject = 'Reset your password.'
                 
                 # Create plain text message to avoid HTML escaping
-                message = f"""Hello {user.username},
-
-You requested a password reset for your account.
-Please go to the following link to set a new password:
-
-{reset_link}
-
-If you didn't request this, you can safely ignore this email.
-
-Thanks,
-Martin Bock"""
+                message = (
+                    f"Hello {user.username},\n\n"
+                    "You requested a password reset for your account.\n"
+                    "Please go to the following link to set a new password:\n\n"
+                    f"{reset_link}\n\n"
+                    "If you didn't request this, you can safely ignore this email.\n\n"
+                    "Thanks,\n"
+                    "Martin Bock"
+                )
 
                 email_message = EmailMessage(
                     mail_subject, message, to=[email]
