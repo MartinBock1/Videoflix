@@ -134,16 +134,67 @@ The project automatically generates interactive API documentation. After startin
 
 ---
 
-## 🧪 Running Tests
-
-The comprehensive test suite can be executed with a single command while the Docker containers are running.
+## 🧪 Testing
 
 ```bash
+# Run all tests
 docker-compose exec web python manage.py test
+
+# Run tests with coverage
+docker-compose exec web python -m coverage run --source='.' manage.py test
+
+# Generate coverage report
+docker-compose exec web python -m coverage report
+
+# Generate HTML coverage report
+docker-compose exec web python -m coverage html
+```
+
+**Current Statistics:**
+*   **Test Coverage:** 94%+
+*   **Test Cases:** 68+
+*   **All tests include automatic cleanup of media files**
+
+---
+
+## 🔧 Development Commands
+
+```bash
+# Database management
+docker-compose exec web python manage.py makemigrations
+docker-compose exec web python manage.py migrate
+docker-compose exec web python manage.py createsuperuser
+
+# Clean up test media files
+docker-compose exec web python cleanup_test_media.py --all
+
+# Check container logs
+docker-compose logs web
+
+# Access Django shell
+docker-compose exec web python manage.py shell
+```
+
+---
+
+## 🚨 Troubleshooting
+
+**Docker containers won't start:**
+```bash
+docker-compose logs web
+docker-compose down
+docker-compose up --build
+```
+
+**Video conversion not working:**
+```bash
+docker-compose logs rq-worker
+docker-compose exec web ffmpeg -version
 ```
 
 ---
 
 ## 📝 License
-This project is licensed under the MIT License. See the LICENSE file for more details.
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
 
