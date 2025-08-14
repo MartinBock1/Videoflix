@@ -64,8 +64,12 @@ class RegistrationView(APIView):
             token = account_activation_token.make_token(saved_account)
 
             # Create direct link to frontend activation page with parameters
+            # activation_link = (
+            #     "http://127.0.0.1:5500/pages/auth/activate.html"
+            #     f"?uid={uidb64}&token={token}"
+            # )
             activation_link = (
-                "http://127.0.0.1:5500/pages/auth/activate.html"
+                "http://localhost:4200/auth/activate.html"
                 f"?uid={uidb64}&token={token}"
             )
             mail_subject = 'Activate your Videoflix account.'
@@ -315,8 +319,12 @@ class PasswordResetRequestView(APIView):
                 uid = urlsafe_base64_encode(force_bytes(user.pk))
 
                 # Create direct link to frontend password reset page with parameters
+                # reset_link = (
+                #     "http://127.0.0.1:5500/pages/auth/confirm_password.html"
+                #     f"?uid={uid}&token={token}"
+                # )
                 reset_link = (
-                    "http://127.0.0.1:5500/pages/auth/confirm_password.html"
+                    "http://localhost:4200/auth/confirm_password.html"
                     f"?uid={uid}&token={token}"
                 )
 
