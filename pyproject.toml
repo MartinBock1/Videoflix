@@ -1,0 +1,65 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "core.test_settings"
+python_files = ["tests.py", "test_*.py", "*_tests.py"]
+addopts = [
+    "-v", 
+    "--tb=short", 
+    "--strict-markers",
+    "--reuse-db",
+    "--nomigrations",
+    "--disable-warnings"
+]
+testpaths = ["."]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+    "django_db: marks tests as requiring database access",
+]
+filterwarnings = [
+    "ignore::UserWarning",
+    "ignore::DeprecationWarning",
+]
+
+[tool.coverage.run]
+source = ["."]
+omit = [
+    "*/migrations/*",
+    "*/venv/*",
+    "*/env/*",
+    "manage.py",
+    "*/settings.py",
+    "*/test_settings.py",
+    "*/tests/*",
+    "*/test_*",
+    "*/__pycache__/*",
+    "*/static/*",
+    "*/media/*",
+    ".env",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+
+[tool.coverage.html]
+directory = "htmlcov"
+skip_covered = false
+show_contexts = true
+
+[tool.coverage.xml]
+output = "coverage.xml"

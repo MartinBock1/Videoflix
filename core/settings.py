@@ -70,7 +70,7 @@ INSTALLED_APPS = [
     'videoflix_app.apps.VideoflixAppConfig',
 ]
 
-# Nötig für das 'sites' Framework (get_current_site)
+# Required for the 'sites' framework (get_current_site)
 SITE_ID = 1
 
 MIDDLEWARE = [
@@ -188,10 +188,10 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 # STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-# Standard-Storage für die Entwicklung
+# Standard storage for development
 STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 
-# Überschreibe ihn nur für die Produktion
+# Override only for production
 if not DEBUG:
     STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
@@ -223,9 +223,9 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
 }
 
-# Email-Backend für die Entwicklung (gibt E-Mails in der Konsole aus)
+# Email backend for development (outputs emails to console)
 # EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-# Im Entwicklungsmodus (DEBUG=True) weiterhin die Konsole verwenden
+# In development mode (DEBUG=True) continue using console
 if DEBUG:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 else:
@@ -239,15 +239,15 @@ else:
     EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
     DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER)
 
-# Wenn 'test' als Befehl ausgeführt wird, überschreibe die Einstellungen für die Testumgebung
+# If 'test' is executed as command, override settings for test environment
 if 'test' in sys.argv:
-    # Verwende eine schnelle In-Memory-Datenbank für Tests (optional, aber schnell)
-    # Wenn Sie gegen die echte PostgreSQL-Testdatenbank testen wollen, kommentieren Sie dies aus.
+    # Use fast in-memory database for tests (optional, but fast)
+    # If you want to test against the real PostgreSQL test database, comment this out.
     # DATABASES['default'] = {
     #     'ENGINE': 'django.db.backends.sqlite3',
     #     'NAME': ':memory:',
     # }
 
-    # Verwende das In-Memory-E-Mail-Backend, um keine echten E-Mails zu senden
+    # Use in-memory email backend to avoid sending real emails
     EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
     
