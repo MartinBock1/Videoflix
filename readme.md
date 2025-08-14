@@ -150,10 +150,7 @@ docker-compose exec web python -m coverage report
 docker-compose exec web python -m coverage html
 ```
 
-**Current Statistics:**
-*   **Test Coverage:** 94%+
-*   **Test Cases:** 68+
-*   **All tests include automatic cleanup of media files**
+**All tests include automatic cleanup of media files**
 
 ---
 
