@@ -3,6 +3,7 @@ from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import EmailMessage
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.conf import settings
 
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -203,20 +204,29 @@ class CookieTokenObtainPairView(TokenObtainPairView):
             }
         )
 
+        # Use environment-aware cookie settings from SIMPLE_JWT
+        jwt_settings = settings.SIMPLE_JWT
+        
         response.set_cookie(
-            key="access_token",
+            key=jwt_settings.get('AUTH_COOKIE', 'access_token'),
             value=str(access),
-            httponly=True,
-            secure=True,
-            samesite="Lax",
+            max_age=int(jwt_settings['ACCESS_TOKEN_LIFETIME'].total_seconds()),
+            httponly=jwt_settings.get('AUTH_COOKIE_HTTP_ONLY', True),
+            secure=jwt_settings.get('AUTH_COOKIE_SECURE', not settings.DEBUG),
+            samesite=jwt_settings.get('AUTH_COOKIE_SAMESITE', 'Lax'),
+            domain=jwt_settings.get('AUTH_COOKIE_DOMAIN'),
+            path=jwt_settings.get('AUTH_COOKIE_PATH', '/'),
         )
 
         response.set_cookie(
-            key="refresh_token",
+            key=jwt_settings.get('AUTH_REFRESH_COOKIE', 'refresh_token'),
             value=str(refresh),
-            httponly=True,
-            secure=True,
-            samesite="Lax",
+            max_age=int(jwt_settings['REFRESH_TOKEN_LIFETIME'].total_seconds()),
+            httponly=jwt_settings.get('AUTH_REFRESH_COOKIE_HTTP_ONLY', True),
+            secure=jwt_settings.get('AUTH_REFRESH_COOKIE_SECURE', not settings.DEBUG),
+            samesite=jwt_settings.get('AUTH_REFRESH_COOKIE_SAMESITE', 'Lax'),
+            domain=jwt_settings.get('AUTH_REFRESH_COOKIE_DOMAIN'),
+            path=jwt_settings.get('AUTH_REFRESH_COOKIE_PATH', '/'),
         )
 
         return response
@@ -271,12 +281,18 @@ class CookieTokenRefreshView(TokenRefreshView):
             }
         )
 
+        # Use SIMPLE_JWT settings for cookie configuration
+        jwt_settings = settings.SIMPLE_JWT
+        
         response.set_cookie(
-            key="access_token",
+            key=jwt_settings.get('AUTH_COOKIE', 'access_token'),
             value=access_token,
-            httponly=True,
-            secure=True,
-            samesite="Lax",
+            max_age=int(jwt_settings['ACCESS_TOKEN_LIFETIME'].total_seconds()),
+            httponly=jwt_settings.get('AUTH_COOKIE_HTTP_ONLY', True),
+            secure=jwt_settings.get('AUTH_COOKIE_SECURE', not settings.DEBUG),
+            samesite=jwt_settings.get('AUTH_COOKIE_SAMESITE', 'Lax'),
+            domain=jwt_settings.get('AUTH_COOKIE_DOMAIN'),
+            path=jwt_settings.get('AUTH_COOKIE_PATH', '/'),
         )
 
         return response
@@ -455,8 +471,19 @@ class LogoutView(APIView):
                 "detail": "Log-Out successfully! Tokens have been invalidated."
             }, status=status.HTTP_200_OK)
 
-            response.delete_cookie("access_token")
-            response.delete_cookie("refresh_token")
+            # Use SIMPLE_JWT settings for cookie deletion
+            jwt_settings = settings.SIMPLE_JWT
+            
+            response.delete_cookie(
+                key=jwt_settings.get('AUTH_COOKIE', 'access_token'),
+                path=jwt_settings.get('AUTH_COOKIE_PATH', '/'),
+                domain=jwt_settings.get('AUTH_COOKIE_DOMAIN')
+            )
+            response.delete_cookie(
+                key=jwt_settings.get('AUTH_REFRESH_COOKIE', 'refresh_token'),
+                path=jwt_settings.get('AUTH_REFRESH_COOKIE_PATH', '/'),
+                domain=jwt_settings.get('AUTH_REFRESH_COOKIE_DOMAIN')
+            )
 
             return response
         except Exception as e:

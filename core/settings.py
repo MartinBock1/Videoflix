@@ -48,6 +48,35 @@ CORS_ALLOWED_ORIGINS = [
 # This is CRUCIAL for your cookie-based authentication to work from the frontend.
 CORS_ALLOW_CREDENTIALS = True
 
+# Additional CORS settings for cookie-based authentication
+CORS_ALLOW_ALL_ORIGINS = False  # Only allow specific origins for security
+CORS_ALLOWED_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+
+# Cookie settings for JWT authentication
+SESSION_COOKIE_SAMESITE = 'Lax'
+SESSION_COOKIE_SECURE = not DEBUG  # Environment-aware: False in dev, True in prod
+SESSION_COOKIE_HTTPONLY = True
+
+# CSRF settings for cross-origin requests
+CSRF_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SECURE = not DEBUG  # Environment-aware: False in dev, True in prod
+CSRF_COOKIE_HTTPONLY = False  # Must be False so JavaScript can read it
+
+# For development: Disable CSRF for API endpoints
+if DEBUG:
+    CORS_ALLOW_ALL_ORIGINS = False  # Keep security even in development
+    # You can add CSRF exemption for API endpoints if needed
+
 
 # Application definition
 
@@ -219,8 +248,25 @@ SPECTACULAR_SETTINGS = {
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ROTATE_REFRESH_TOKENS": True,
+    
+    # HTTP-Only Cookie Settings
+    'AUTH_COOKIE': 'access_token',
+    'AUTH_COOKIE_DOMAIN': 'localhost' if DEBUG else None,  # localhost für Development
+    'AUTH_COOKIE_SECURE': not DEBUG,  # False in dev, True in prod
+    'AUTH_COOKIE_HTTP_ONLY': True,
+    'AUTH_COOKIE_PATH': '/',
+    'AUTH_COOKIE_SAMESITE': 'Lax',
+    
+    # Refresh Cookie Settings
+    'AUTH_REFRESH_COOKIE': 'refresh_token',
+    'AUTH_REFRESH_COOKIE_DOMAIN': 'localhost' if DEBUG else None,  # localhost für Development
+    'AUTH_REFRESH_COOKIE_SECURE': not DEBUG,
+    'AUTH_REFRESH_COOKIE_HTTP_ONLY': True,
+    'AUTH_REFRESH_COOKIE_PATH': '/',
+    'AUTH_REFRESH_COOKIE_SAMESITE': 'Lax',
 }
 
 # Email backend for development (outputs emails to console)
