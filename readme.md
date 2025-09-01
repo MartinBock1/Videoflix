@@ -44,6 +44,14 @@ This project provides a complete solution for user authentication, video uploadi
 
 ---
 
+## 🖥️ Frontend
+
+This repository contains only the backend API for Videoflix. The corresponding frontend, designed to interact with this API, can be found in a separate repository.
+
+*   **Videoflix Frontend Repository:** [https://github.com/MartinBock1/Videoflix_FE.git](https://github.com/MartinBock1/Videoflix_FE.git)
+
+---
+
 ## 🚀 Getting Started
 
 Follow these steps to run the project locally.
@@ -55,20 +63,21 @@ Follow these steps to run the project locally.
 
 ### Installation & Execution
 
-1. **Clone the repository:**
-
-   ```bash
-   git clone <REPOSITORY-LINK>
-   cd <projectfolder>
-   
-2. **Set up a virtual environment:**
+1.  **Clone the repository:**
 
     ```bash
-    python -m venv env
-    env/Scripts/activate  # Windows
-    source env/bin/activate  # macOS/Linux
+    git clone <REPOSITORY-LINK>
+    cd <projectfolder>
     ```
-    *Note: On macOS/Linux, python3 may have to be used instead of python.
+
+2.  **Set up a virtual environment:**
+
+    ```bash
+    python -m venv venv
+    venv/Scripts/activate    # Windows
+    source venv/bin/activate # macOS/Linux
+    ```
+    *Note: On macOS/Linux, `python3` may have to be used instead of `python`.*
 
 3.  **Install the required packages:**
     The `requirements.txt` file contains all necessary Python packages.
@@ -77,7 +86,6 @@ Follow these steps to run the project locally.
     ```
     *Note: If a `requirements.txt` file is not present, you can generate one from the existing project setup using `pip freeze > requirements.txt`.*
 
-
 4.  **Create Environment Variables:**
     Create a `.env` file in the project's root directory by copying `env.example`:
 
@@ -85,7 +93,7 @@ Follow these steps to run the project locally.
     cp .env.template .env
     ```
 
-     Or by creating a new file with the following content. The default values are generally fine for local development.
+    Or by creating a new file with the following content. The default values are generally fine for local development.
     ```ini
     # Django
     DEBUG=False
@@ -105,10 +113,10 @@ Follow these steps to run the project locally.
 5.  **Build and Start Docker Containers:**
     This command builds the images, starts all services (web API, database, Redis, RQ worker), and runs the database migrations.
     ```bash
-    # just for Mac user
+    # For Mac users only
     chmod +x backend.entrypoint.sh
 
-    # for all systems
+    # For all systems
     docker-compose up --build
     ```
     You can add `-d` to run the containers in the background.
@@ -127,10 +135,10 @@ The project automatically generates interactive API documentation. After startin
 
 ### Main Endpoints
 
-| Endpoint Group | URL Prefix | Description |
-| :--- | :--- | :--- |
-| **Authentication** | `/api/` | Includes registration, login, logout, password reset, and token refresh. |
-| **Video Streaming** | `/api/video/` | Provides endpoints for the video list, details, and HLS streaming. |
+| Endpoint Group   | URL Prefix    | Description                                                              |
+| :--------------- | :------------ | :----------------------------------------------------------------------- |
+| **Authentication** | `/api/`       | Includes registration, login, logout, password reset, and token refresh. |
+| **Video Streaming**  | `/api/video/` | Provides endpoints for the video list, details, and HLS streaming.       |
 
 ---
 
@@ -150,7 +158,7 @@ docker-compose exec web python -m coverage report
 docker-compose exec web python -m coverage html
 ```
 
-**All tests include automatic cleanup of media files**
+**All tests include automatic cleanup of media files.**
 
 ---
 
@@ -194,4 +202,3 @@ docker-compose exec web ffmpeg -version
 ## 📝 License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
-
