@@ -70,7 +70,7 @@ class RegistrationView(APIView):
             #     f"?uid={uidb64}&token={token}"
             # )
             activation_link = (
-                "https://www.videoflix.martin-bock.info/auth/activate.html"
+                "http://localhost:4200/auth/activate.html"
                 f"?uid={uidb64}&token={token}"
             )
             mail_subject = 'Activate your Videoflix account.'
@@ -340,7 +340,7 @@ class PasswordResetRequestView(APIView):
                 #     f"?uid={uid}&token={token}"
                 # )
                 reset_link = (
-                    "https://www.videoflix.martin-bock.info/auth/confirm_password.html"
+                    "http://localhost:4200/auth/confirm_password.html"
                     f"?uid={uid}&token={token}"
                 )
 
